@@ -1,0 +1,127 @@
+### This config file contains required core defaults that must be set, along with a handful of common optional settings.
+### For a full list of available settings, see https://microsoft.github.io/graphrag/config/yaml/
+
+### LLM settings ###
+
+completion_models:
+  default_completion_model:
+    model_provider: openai
+    model: deepseek-ai/DeepSeek-R1-0528-Qwen3-8B    # ← 新模型
+    api_base: https://api.siliconflow.cn/v1
+    api_key: ${SILICONFLOW_API_KEY}                 # ← 用硅基流动的 Key
+    extra_body:
+      enable_thinking: false                        # ← 必须加！否则必崩
+    retry:
+      type: exponential_backoff
+
+embedding_models:
+  default_embedding_model:
+    model_provider: openai          # 保持不变，硅基流动兼容 OpenAI 格式
+    model: BAAI/bge-m3              # ← 改：原来是 text-embedding-3-large
+    auth_method: api_key
+    api_base: https://api.siliconflow.cn/v1  # ← 新增
+    api_key: ${SILICONFLOW_API_KEY} # ← 改：原来是 ${GRAPHRAG_API_KEY}
+    embedding_dim: 1024             # ← 新增：BGE-M3 输出维度，必须写！
+    retry:
+      type: exponential_backoff
+
+### Document processing settings ###
+
+input:
+  type: text
+
+chunking:
+  type: tokens
+  size: 1200
+  overlap: 100
+  encoding_model: cl100k_base       # ← 改：原来是 o200k_base，用 cl100k 更通用
+
+### Storage settings ###
+
+input_storage:
+  type: file
+  base_dir: "input"
+
+output_storage:
+  type: file
+  base_dir: "output"
+
+reporting:
+  type: file
+  base_dir: "logs"
+
+cache:
+  type: json
+  storage:
+    type: file
+    base_dir: "cache"
+    
+vector_store:
+  type: lancedb
+  db_uri: output\lancedb
+
+### Workflow settings ###
+
+embed_text:
+  embedding_model_id: default_embedding_model
+
+extract_graph:
+  completion_model_id: default_completion_model
+  prompt: "prompts/extract_graph.txt"
+  entity_types: [organization,person,geo,event]
+  max_gleanings: 1
+
+summarize_descriptions:
+  completion_model_id: default_completion_model
+  prompt: "prompts/summarize_descriptions.txt"
+  max_length: 500
+
+extract_graph_nlp:
+  text_analyzer:
+    extractor_type: regex_english
+
+cluster_graph:
+  max_cluster_size: 10
+
+extract_claims:
+  enabled: false
+  completion_model_id: default_completion_model
+  prompt: "prompts/extract_claims.txt"
+  description: "Any claims or facts that could be relevant to information discovery."
+  max_gleanings: 1
+
+community_reports:
+  completion_model_id: default_completion_model
+  graph_prompt: "prompts/community_report_graph.txt"
+  text_prompt: "prompts/community_report_text.txt"
+  max_length: 2000
+  max_input_length: 8000
+  max_workers: 1
+
+snapshots:
+  graphml: false
+  embeddings: false
+
+### Query settings ###
+
+local_search:
+  completion_model_id: default_completion_model
+  embedding_model_id: default_embedding_model
+  prompt: "prompts/local_search_system_prompt.txt"
+
+global_search:
+  completion_model_id: default_completion_model
+  map_prompt: "prompts/global_search_map_system_prompt.txt"
+  reduce_prompt: "prompts/global_search_reduce_system_prompt.txt"
+  knowledge_prompt: "prompts/global_search_knowledge_system_prompt.txt"
+
+drift_search:
+  completion_model_id: default_completion_model
+  embedding_model_id: default_embedding_model
+  prompt: "prompts/drift_search_system_prompt.txt"
+  reduce_prompt: "prompts/drift_search_reduce_prompt.txt"
+
+basic_search:
+  completion_model_id: default_completion_model
+  embedding_model_id: default_embedding_model
+  prompt: "prompts/basic_search_system_prompt.txt"
